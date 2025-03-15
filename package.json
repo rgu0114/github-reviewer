@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "start": "tsx dist/index.js",
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc --outDir dist",
     "lint": "eslint \"src/**/*.ts*\"",
     "check-types": "tsc --noEmit"
   },

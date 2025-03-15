@@ -44,7 +44,7 @@ export async function startServer() {
       }
 
       const token = await getTokenForWebhook(installationId);
-      const agent = await getPRReviewAgent(token);
+      const agent = await getPRReviewAgent();
 
       // Handle different event types
       switch (event) {

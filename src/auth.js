@@ -1,0 +1,63 @@
+import * as jwt from "jsonwebtoken";
+import axios from "axios";
+/**
+ * Get an installation access token from a webhook payload's installation ID
+ */
+export async function getTokenForWebhook(installationId) {
+    var _a;
+    const APP_ID = process.env.GITHUB_APP_ID;
+    const rawKey = (_a = process.env.GITHUB_APP_PRIVATE_KEY) === null || _a === void 0 ? void 0 : _a.replace(/\\n/g, "\n");
+    const PRIVATE_KEY = (rawKey === null || rawKey === void 0 ? void 0 : rawKey.includes("-----BEGIN"))
+        ? rawKey
+        : `-----BEGIN RSA PRIVATE KEY-----\n${rawKey}\n-----END RSA PRIVATE KEY-----`;
+    if (!APP_ID || !PRIVATE_KEY) {
+        throw new Error("Missing required GitHub App credentials");
+    }
+    // Generate JWT for getting installation token
+    const jwtToken = jwt.sign({
+        iat: Math.floor(Date.now() / 1000) - 60,
+        exp: Math.floor(Date.now() / 1000) + 600,
+        iss: APP_ID,
+    }, PRIVATE_KEY, { algorithm: "RS256" });
+    // Exchange JWT for installation token
+    const response = await axios.post(`https://api.github.com/app/installations/${installationId}/access_tokens`, {}, {
+        headers: {
+            Authorization: `Bearer ${jwtToken}`,
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    });
+    return response.data.token;
+}
+// Cache for installation tokens to avoid unnecessary API calls
+const tokenCache = {};
+/**
+ * Get a cached installation access token, refreshing if necessary
+ */
+export async function getCachedInstallationToken(installationId) {
+    const now = Date.now();
+    const cached = tokenCache[installationId];
+    // If we have a cached token that's still valid (with 5 minute buffer)
+    if (cached && cached.expiresAt > now + 300000) {
+        return cached.token;
+    }
+    // Get new token
+    const token = await getTokenForWebhook(installationId);
+    // Cache token (GitHub tokens expire after 1 hour)
+    tokenCache[installationId] = {
+        token,
+        expiresAt: now + 3600000, // 1 hour from now
+    };
+    return token;
+}
+/**
+ * Get headers for GitHub API requests
+ */
+export async function getGitHubHeaders(installationId) {
+    const token = await getCachedInstallationToken(installationId);
+    return {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    };
+}

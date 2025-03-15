@@ -23,6 +23,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/json-schema": "^7.0.15",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20",
     "@types/react": "18.3.1",

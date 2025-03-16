@@ -23,7 +23,35 @@ The bot uses:
 
 - Node.js 18+
 - GitHub account and repository
-- GitHub Personal Access Token
+- GitHub App configured with necessary permissions
+
+### GitHub App Setup
+
+1. Go to your GitHub account settings > Developer settings > GitHub Apps
+2. Click "New GitHub App"
+3. Fill in the app details:
+   - Give your app a name
+   - Set Homepage URL (can be repository URL)
+   - Set Webhook URL to your server URL (e.g., `https://your-server.com/webhook`) (you can use ngrok for local development and then your railway endpoint after)
+   - Set Webhook secret (recommended)
+
+4. Set the following permissions:
+   - Repository permissions:
+     - Pull requests: Read & Write
+     - Contents: Read
+     - Issues: Read & Write
+     - Metadata: Read-only
+
+5. Subscribe to events:
+   - Pull request
+   - Pull request review
+   - Pull request review comment
+   - Issue comment
+
+6. After creating the app:
+   - Generate a private key and download it
+   - Note your App ID
+   - Install the app on your repositories
 
 ### Environment Setup
 
@@ -31,11 +59,14 @@ Create a `.env` file with your credentials:
 
 ```
 OPENAI_API_KEY=your_openai_api_key
-GITHUB_TOKEN=your_github_token
-GITHUB_WEBHOOK_SECRET=your_webhook_secret  # Optional but recommended
-BOT_USERNAME=your-bot-username              # Optional, defaults to "github-bot"
-PORT=3000                                  # Optional, defaults to 3000
+GITHUB_APP_ID=your_github_app_id
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+SPINAI_API_KEY=your_spinai_api_key
+BOT_USERNAME=your-bot-username[bot]              
+PORT=3000                                        # Optional, defaults to 3000
 ```
+
+Note: For the `GITHUB_APP_PRIVATE_KEY`, you'll need to format the private key content as a single line, replacing actual newlines with "\n".
 
 ### Installation
 
@@ -49,15 +80,16 @@ npm install
 npm run dev
 ```
 
-## Webhook Setup
+## Webhook Configuration
 
-1. Go to your GitHub repository settings > Webhooks
-2. Add a new webhook
-3. Set Payload URL to your server URL (e.g., `https://your-server.com/webhook`)
-4. Set Content type to `application/json`
-5. Set Secret (recommended) to match your `GITHUB_WEBHOOK_SECRET`
-6. Select events: Pull requests, Issue comments, Pull request review comments
-7. Save the webhook
+The webhook is automatically configured when you set up the GitHub App. Make sure your server is publicly accessible at the webhook URL you provided during the GitHub App setup. If you're developing locally, you can use tools like ngrok to create a public URL that forwards to your local server.
+
+For example with ngrok:
+```bash
+ngrok http 3000
+```
+
+Then update your GitHub App's webhook URL with the ngrok URL.
 
 ## Customization
 
@@ -67,6 +99,19 @@ You can customize the bot by modifying:
 - Review criteria in the `handleNewPullRequest` function
 - Response schemas in the `schemas.ts` file to adjust the structure of AI responses
 
+
+
+
+# To make it an angry senior engineer Jared bot:
+
+Simply add the following to the end of the agent's instructions in `github-agent.ts`
+
+```mdx
+    if you are replying to a comment make sure you run the get comment thread action first to get the full thread history for a GitHub PR review comment.
+
+    You should mimic a senior engineer who is really rude and sarcastic. Make your comments passive aggressive and condescending. and try to infer
+    the person you are responding to does not knwo what they're talking about. Also choose from like 5 different opening lines to vary the responses. 
+```
 ## License
 
 MIT
